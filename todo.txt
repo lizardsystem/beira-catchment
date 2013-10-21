@@ -1,0 +1,107 @@
+ - Legend
+ - Loading indicator
+ - dat.gui for parameter changing
+
+
+
+
+
+
+
+
+
+
+
+
+    1  sudo /etc/init.d/networking restart
+    2  sudo aptitude search cgal
+    3  sudo aptitude install libcgal8 libcgal-dev
+    4  sudo aptitude search postgis
+    5  sudo aptitude install postgresql-9.1-postgis
+    6  sudo add-apt-repository ppa:georepublic/pgrouting-unstable
+    7  sudo aptitude update
+    8  sudo aptitude search boost
+    9  sudo aptitude install libboost-all-dev
+   10  sudo aptitude search pgrouting
+   11  sudo aptitude install postgresql-9.1-pgrouting-2.0
+   12  ls
+   13  cd /vagrant/
+   14  ls
+   15  sudo service postgresql status
+   16  sudo su postgres
+   17  sudo vi /etc/postgresql/9.1/main/postgresql.conf
+   18  sudo vi /etc/postgresql/9.1/main/pg_hba.conf
+   19  sudo service postgresql restart
+   20  sudo su postgres
+   21  cd /usr/share/postgresql/9.1/extension/
+   22  ls
+   23  cd
+   24  ls
+   25  mkdir src
+   26  ls
+   27  git clone git@github.com:pgRouting/pgrouting.git
+   28  git clone https://github.com/pgRouting/pgrouting.git
+   29  ls
+   30  cd pgrouting/
+   31  ls
+   32  mkdir build
+   33  cd build/
+   34  ls
+   35  cmake
+   36  sudo aptitude install cmake
+   37  ls
+   38  cmake -DWITH_DD=ON ..
+   39  sudo aptitude search postgresql
+   40  sudo aptitude install postgresql-server-dev-9.1
+   41  cmake -DWITH_DD=ON ..
+   42  make
+   43  sudo make install
+   44  sudo service postgresql restart
+   45  ls
+   46  history
+   47  ls
+   48  cd
+   49  ls
+   50  cd /vagrant/
+   51  ls
+   52  ls -al
+   53  wget http://osm2po.de/download.php?lnk=osm2po-4.7.7.zip
+   54  ls
+   55  rm download.php\?lnk\=osm2po-4.7.7.zip
+   56  ls
+   57  cd osm2po-4.7.7/
+   58  ls
+   59  java
+   60  sudo aptitude install openjdk-7-jre-headless
+   61  ls
+   62  java -jar osm2po-core-4.7.7-signed.jar
+   63  java -jar osm2po-core-4.7.7-signed.jar prefix=mz /vagrant/mozambique.osm
+   64  psql -U [upgrouting -d pgrouting -q -f "/vagrant/osm2po-4.7.7/mz/mz_2po_4pgr.sql"
+   65  psql -U pgrouting -d pgrouting -q -f "/vagrant/osm2po-4.7.7/mz/mz_2po_4pgr.sql"
+   66  psql -U pgrouting -W -d pgrouting -q -f "/vagrant/osm2po-4.7.7/mz/mz_2po_4pgr.sql"
+   67  sudo su postgres
+   68  cd ..
+   69  ls
+   70  cd beira/
+   71  ls
+   72  npm install
+   73  ls
+   74  ./node_modules/express/bin/express .
+   75  ls
+   76  sudo node app.js
+   77  npm install
+   78  sudo node app.js
+   79  ls
+   80  cd public/javascripts/
+   81  ls
+   82  chmod 755 color.js
+   83  ls
+   84  cd ..
+   85  ls
+   86  sudo node app.js
+   87  cd /vagrant/
+   88  ls
+   89  cd beira/
+   90  ls
+   91  sudo node app.js
+   92  history

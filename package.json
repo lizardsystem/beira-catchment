@@ -1,0 +1,17 @@
+{
+  "name": "beira",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "node app"
+  },
+  "dependencies": {
+    "express": "3.0.0-rc4",
+    "jade": "*",
+    "request": "",
+    "hogan-express": "",
+    "ejs": "*",
+    "socket.io": ">= 0.8.7",
+    "pg": ""    
+  }
+}

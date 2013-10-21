@@ -1,0 +1,120 @@
+<html>
+	
+	<head>
+	<title>Beira - Catchment Demo</title>		
+		<!-- Leaflet -->
+		<link rel="stylesheet" href="leaflet/leaflet.css" />
+		<!--[if lte IE 8]><link rel="stylesheet" href="leaflet/leaflet.ie.css" /><![endif]-->
+		<script src="leaflet/leaflet.js"></script>
+		<script src="javascripts/leaflet-hash.js"></script>		
+		<script src="javascripts/jquery.min.js"></script>
+		<script src="javascripts/color.js"></script>
+	</head>
+
+	<body>
+		<div id="map" style="height: 100%"></div>
+
+
+	<script>
+		// In case we forget to take out console statements.
+		if(typeof(console) === 'undefined') {
+		    var console = {}
+		    console.log = console.error = console.info = console.debug = console.warn = console.trace = console.dir = console.dirxml = console.group = console.groupEnd = console.time = console.timeEnd = console.assert = console.profile = function() {};
+		}
+
+		// Instruct Leaflet to prefer canvas rendering
+		L_PREFER_CANVAS = true; 
+
+		// Define some colors
+		var Color = net.brehaut.Color;
+		var Green = Color("#00FF00");
+		var Red = Color({hue: 0, saturation: 1, value: 1});
+		var Blue = Color("rgb(0,0,255)");
+		var Cyan = Color({hue: 180, saturation: 1, lightness: 0.5});
+		var Magenta = Color("hsl(300, 100%, 50%)");
+		var Yellow = Color([255,255,0]);
+
+		// Global variables
+		var start_popups = [];
+		var circles = [];
+		var map = L.map('map').setView([-19.8265,34.8583], 14);
+	    var hash = new L.Hash(map);
+
+	    // Define and add an OSM baselayer
+		L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+		    attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+		}).addTo(map);
+
+		// Satellite baselayer
+		// L.tileLayer('http://khm1.googleapis.com/kh/v=137&src=app&x={x}&y={y}&z={z}&s=&token=66417.png', {
+		//     attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+		// }).addTo(map);
+
+
+		// Map clickhandler
+		map.on('click', function(e){
+			clearMap();
+
+		    $.ajax({
+		      url: "/edge?lat="+e.latlng.lat+"&lon="+e.latlng.lng
+		    }).done(function(data) {
+		        edgedata = JSON.parse(data);
+		        // console.log('edgedata',edgedata);
+		        var startpopup = L.circle(e.latlng, 100, {stroke:false, fillOpacity: 100, fillColor:'black'}).addTo(map).bindPopup(edgedata.osm_name + "...");
+		        start_popups.push(startpopup);
+			      
+		        $.ajax({
+		            url: "/catchment?startingpoint=" + edgedata.source + "&length=1"
+		        }).done(function(catchment_data) {
+		        	var cd = JSON.parse(catchment_data);
+		        	// console.log('catchment_data:', cd);
+
+		            $.each(cd, function(i, v) {
+		            	var cost = (v.cost*10000);
+		            	if(cost >= 0 && cost <= 100) {
+		            		var colorCost = 'green';
+		            	} else if(cost >= 100 && cost <= 300) {
+		            		var colorCost = 'yellow';
+		            	} else if(cost >= 301 && cost <= 500) {
+		            		var colorCost = 'orange';
+		            	} else if(cost >= 501 && cost <= 700) {
+		            		var colorCost = 'red';
+		            	} else if(cost > 701) {
+							var colorCost = 'darkred';
+		            	}
+
+		            	var circle = new L.circle(
+		            		new L.LatLng(v.y1,v.x1),
+		            		150, 
+		            		{
+		            			stroke: false,
+		            			fillColor: colorCost
+		            		})
+		            		.addTo(map)
+		            		.bindPopup("Kosten: " + Math.round(cost));
+		            	circles.push(circle);
+		            });
+
+
+		        });
+
+		    });
+		});
+
+
+		// Clears map of all layers, markers, lines and such.
+		function clearMap() {
+		    for(i in map._layers) {
+		        if(map._layers[i]._path != undefined) {
+		            try {
+		                map.removeLayer(map._layers[i]);
+		            }
+		            catch(e) {
+		                console.log("Problem with " + e + map._layers[i]);
+		            }
+		        }
+		    }
+		}
+	</script>
+	</body>
+</html>
