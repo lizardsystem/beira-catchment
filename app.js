@@ -132,7 +132,7 @@ function(req, res) {
 
 
 // Server at fixed port 80, requires sudo
-http.createServer(app).listen(80, function(){
+http.createServer(app).listen(3033, function(){
   console.log("Express server listening on port 80");
 });
 
