@@ -1,9 +1,8 @@
 <html>
 	
 	<head>
-	<title>Beira - Driving Distance Demo</title>		
+	<title>Beira - Traffic Isotope Demo</title>		
         <meta name="viewport" content="width=device-width">
-
 		<!-- Leaflet -->
 		<link rel="stylesheet" href="leaflet/leaflet.css" />
 		<!--[if lte IE 8]><link rel="stylesheet" href="leaflet/leaflet.ie.css" /><![endif]-->
@@ -159,6 +158,7 @@
 
 		            $.each(cd, function(i, v) {
 		            	var cost = (v.cost*10000);
+
 		            	var colorCost = getColor(cost);
 
 		            	var circle = new L.circle(
@@ -178,7 +178,6 @@
 
 		    });
 		});
-
 
 	    var SimulationValues = function() {
 	      this.distance = window.distance;
