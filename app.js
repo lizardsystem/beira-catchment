@@ -13,7 +13,7 @@ var app = express();
 
 // Configure Express
 app.configure(function(){
-  app.set('port', process.env.PORT || 80);
+  app.set('port', process.env.PORT || 3033);
   app.set('views', __dirname + '/views');
   // app.set('view engine', 'ejs');
   app.set('view engine', 'html');
@@ -144,6 +144,40 @@ function(req, res) {
     } else {
       console.log('alpha error 1:', err1);
       res.json('{}');
+    }
+  });
+  query.on('error', function(error) {
+    console.log(error);
+  });
+});
+
+app.get('/route',
+function(req, res) {
+
+  var startEdge = parseFloat(req.query.startedge);
+  var endEdge = parseFloat(req.query.endedge);
+
+  var sql = "SELECT * FROM pgr_dijkstra( \
+               'SELECT id, \
+                       source::int4 AS source, \
+                       target::int4 AS target, \
+                       cost::float8, \
+                       reverse_cost::float8 AS reverse_cost \
+                FROM \
+                       "+pgroutingTable+"', \
+                       "+startEdge+", "+endEdge+", false, false) \
+              JOIN "+pgroutingTable+" \
+              ON id2 = "+pgroutingTable+".id ORDER BY seq";
+
+  var query = client.query(sql, function(err, result) {
+    //NOTE: error handling not present
+    if(result) {
+      var json = JSON.stringify(result.rows);
+      console.log(json);
+      res.json(json);
+    } else {
+      console.log(err);
+      res.json({});
     }
   });
   query.on('error', function(error) {

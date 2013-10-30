@@ -1,7 +1,7 @@
 <html>
 	
 	<head>
-	<title>Beira - Traffic Isotope Demo</title>		
+	<title>Beira - Reachability Analysis</title>		
         <meta name="viewport" content="width=device-width">
 		<!-- Leaflet -->
 		<link rel="stylesheet" href="leaflet/leaflet.css" />
@@ -52,13 +52,17 @@
 
 	<script>
 		// In case we forget to take out console statements.
-		window.distance = 1;
-		window.max = 200;
-
 		if(typeof(console) === 'undefined') {
 		    var console = {}
 		    console.log = console.error = console.info = console.debug = console.warn = console.trace = console.dir = console.dirxml = console.group = console.groupEnd = console.time = console.timeEnd = console.assert = console.profile = function() {};
 		}
+
+		window.distance = 1;
+		window.max = 500;
+		window.zoomToRoute = false;
+
+		var from_data, to_data;
+		var routes = [];
 
 		// Instruct Leaflet to prefer canvas rendering
 		L_PREFER_CANVAS = true; 
@@ -88,7 +92,8 @@
 		var start_popups = [];
 		var circles = [];
 		var map = L.map('map', {
-			layers: [satlayer, osmlayer]
+			// layers: [satlayer, osmlayer]
+			layers: [osmlayer]
 		}).setView([-19.8265,34.8583], 14);
 	    var hash = new L.Hash(map);
 
@@ -107,7 +112,7 @@
 		legend.onAdd = function (map) {
 
 			var div = L.DomUtil.create('div', 'info legend'),
-				grades = [0, 100, 300, 400, 500, 700, 900, 1000],
+				grades = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45],
 				labels = [],
 				from, to;
 
@@ -120,7 +125,7 @@
 					from + (to ? '&ndash;' + to : '+') + ' min.');
 			}
 
-			div.innerHTML = '<strong>Drive time</strong><br><hr size="0" noshade/><i style="background:black;"></i> Startpoint<br/>' + labels.join('<br>');
+			div.innerHTML = '<strong><img src="images/icon-car.png"/>&nbsp;Driving time</strong><br><hr size="0" noshade/><div style="width:121px;"><i style="background:black;"></i> Startpoint<br/>' + labels.join('<br>') + '</div>';
 			return div;
 		};
 
@@ -131,7 +136,7 @@
 
 		about.onAdd = function (map) {
 			var div = L.DomUtil.create('div', 'info legend');
-			div.innerHTML = '<strong>About</strong><br><hr size="0" noshade/><div style="width:121px;">Drive time isotope for Beira, Mozambique. Click somewhere on the map to start.</div>';
+			div.innerHTML = "<strong>What's this?</strong><br><hr size='0' noshade/><div style='width:121px;'>Click somewhere on the map to start a new reachability analysis.</div>";
 			return div;
 		};
 
@@ -139,49 +144,78 @@
 
 
 		// Map clickhandler
-		map.on('click', function(e){
+		map.on('click', function(e1){
 			clearMap();
 
 		    $.ajax({
-		      url: "/edge?lat="+e.latlng.lat+"&lon="+e.latlng.lng
+		      url: "/edge?lat="+e1.latlng.lat+"&lon="+e1.latlng.lng
 		    }).done(function(data) {
-		        edgedata = JSON.parse(data);
-		        //console.log('edgedata',edgedata);
-		        var startpopup = L.circle(e.latlng, 100, {stroke:false, fillOpacity: 100, fillColor:'black'}).addTo(map) //.bindPopup(edgedata.osm_name + "...");
+		        to_data = JSON.parse(data);
+		        // console.log('to_data',to_data);
+		        var startpopup = L.circle(e1.latlng, 100, {stroke:false, fillOpacity: 100, fillColor:'black'}).addTo(map) //.bindPopup(edgedata.osm_name + "...");
 		        start_popups.push(startpopup);
 			      
 		        $.ajax({
-		            url: "/catchment?startingpoint=" + edgedata.source + "&length=" + window.distance + "&max=" + window.max
+		            url: "/catchment?startingpoint=" + to_data.source + "&length=" + window.distance + "&max=" + window.max
 		        }).done(function(catchment_data) {
 		        	var cd = JSON.parse(catchment_data);
 		        	//console.log('catchment_data:', cd);
 
 		            $.each(cd, function(i, v) {
-		            	var cost = (v.cost*10000);
+		            	var cost = (v.cost*100);
 
 		            	var colorCost = getColor(cost);
 
-		            	var circle = new L.circle(
+		            	var circle = new L.CircleMarker(
 		            		new L.LatLng(v.y1,v.x1),
-		            		150, 
 		            		{
 		            			stroke: false,
 		            			fillColor: colorCost
 		            		})
 		            		.addTo(map)
-		            		.bindPopup("Kosten: " + Math.round(cost));
+		            		.bindPopup("Approx. " + Math.round(cost) + " minutes of driving to this point.");
+
+		            	circle.on('click', function(e2) {
+						    $.ajax({
+						      url: "/edge?lat="+e2.latlng.lat+"&lon="+e2.latlng.lng
+						    }).done(function(data) {
+					          var from_data = JSON.parse(data);
+						        $.ajax({
+						            url: "/route?startedge="+from_data.source+"&endedge="+to_data.target
+						        }).done(function(e3) {
+							        $.each(routes, function(i,v) {
+							          map.removeLayer(v);
+							        });
+
+						            var route_data = JSON.parse(e3);
+						            var latlngs = [];
+						            
+						            latlngs.push(e2.latlng);
+						            $.each(route_data, function(i, value) {
+						                latlngs.push(new L.LatLng(value.y1, value.x1));
+						            });
+						            latlngs.push(e1.latlng);
+						            var pl = new L.Polyline(latlngs, {color:'red', weight: 10, clickable: false}).addTo(map);
+
+						            routes.push(pl);
+
+						            if(window.zoomtoroute) {
+							            map.fitBounds(pl.getBounds());
+						            }
+						        });
+						    });
+		            	});
 		            	circles.push(circle);
 		            });
-
-
 		        });
-
 		    });
 		});
+		L.control.scale().addTo(map);
 
 	    var SimulationValues = function() {
 	      this.distance = window.distance;
 	      this.max = window.max;
+	      this.zoomToRoute = false;	      
 	    };
 	    var simulation = new SimulationValues();
 
@@ -198,33 +232,44 @@
 		// console.log("Resetting!"); 
 	      }
 	    };
-        var f1 = gui.addFolder("Routing parameters");
+        var f1 = gui.addFolder("Settings");
         f1.open();
-	    var distance_controller = f1.add(simulation, 'distance', 0, 10, 0.1).name("Distance (km)");
-	    var max_controller = f1.add(simulation, 'max', 0, 3000).name("Max results");
-	    distance_controller.onChange(function(value) {
-	      console.log("Distance: ", value);
-	      window.distance = value;
-	    });
+	    // var distance_controller = f1.add(simulation, 'distance', 0, 50, 0.1).name("Distance (km)");
+	    var max_controller = f1.add(simulation, 'max', 0, 9000).name("Max results");
+        var zoomtoroute_controller = f1.add(simulation, 'zoomToRoute').name('Zoom to route');
+
+
+	    // distance_controller.onChange(function(value) {
+	    //   console.log("Distance: ", value);
+	    //   window.distance = value;
+	    // });
 	    max_controller.onChange(function(value) {
     	  console.log("Maximum: ", max);
 		  window.max = Math.round(value);
 	    });
+	    zoomtoroute_controller.onChange(function(checked) {
+	      if(checked) {
+	        window.zoomtoroute = true;
+	      } else {
+	        window.zoomtoroute = false;
+	      }
+	    });	    
 
 
 		// get color depending on population density value
 		function getColor(d) {
-			return d > 1000 ? '#660000' : // very very dark red
-			       d > 900  ? '#AA0000' : // very dark red
-   			       d > 800  ? '#CC0000' : // dark red
-			       d > 700  ? '#FF0000' : // red
-			       d > 600  ? '#CC0066' : // rose
-			       d > 500  ? '#DD6F00' : // dark orange
-			       d > 400  ? '#FF8000' : // orange
-			       d > 300   ? '#EEEE00' : // yellow
-			       d > 200   ? '#74C476' : // matte green
-			       d > 100   ? '#00FF00' : // bright geen
-			                  '#00FF84'; // blueish green
+		// grades = [0, 5, 10, 15, 20, 25, 30, 35],
+			return d > 45  ? '#660000' : // very very dark red
+			       d > 40  ? '#AA0000' : // very dark red
+   			       d > 35  ? '#CC0000' : // dark red
+			       d > 30  ? '#FF0000' : // red
+			       d > 25  ? '#CC0066' : // rose
+			       d > 20  ? '#DD6F00' : // dark orange
+			       d > 15  ? '#FF8000' : // orange
+			       d > 10  ? '#EEEE00' : // yellow
+			       d > 5   ? '#74C476' : // matte green
+			       d > 0   ? '#00FF00' : // bright geen
+			                 '#00FF84';  // blueish green
 		}
 
 		// Clears map of all layers, markers, lines and such.
