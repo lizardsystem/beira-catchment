@@ -5,9 +5,12 @@
         <meta name="viewport" content="width=device-width">
 		<!-- Leaflet -->
 		<link rel="stylesheet" href="leaflet/leaflet.css" />
+		<link rel="stylesheet" href="javascripts/leaflet.draw.css" />
 		<!--[if lte IE 8]><link rel="stylesheet" href="leaflet/leaflet.ie.css" /><![endif]-->
+		<!--[if lte IE 8]><link rel="stylesheet" href="javascripts/leaflet.draw.ie.css" /><![endif]-->
 		<script src="leaflet/leaflet.js"></script>
 		<script src="javascripts/leaflet-hash.js"></script>		
+		<script src="javascripts/leaflet.draw.js"></script>
 		<script src="javascripts/dat.gui.min.js"></script>		
 		<script src="javascripts/jquery.min.js"></script>
 		<script src="javascripts/color.js"></script>
@@ -125,7 +128,7 @@
 					from + (to ? '&ndash;' + to : '+') + ' min.');
 			}
 
-			div.innerHTML = '<strong><img src="images/icon-car.png"/>&nbsp;Driving time</strong><br><hr size="0" noshade/><div style="width:121px;"><i style="background:black;"></i> Startpoint<br/>' + labels.join('<br>') + '</div>';
+			div.innerHTML = '<strong><img src="images/icon-car.png"/>&nbsp;Driving time</strong><br><hr size="0" noshade/><div style="width:121px;"><i style="background:black;"></i> Start<br/>' + labels.join('<br>') + '</div>';
 			return div;
 		};
 
@@ -211,6 +214,56 @@
 		    });
 		});
 		L.control.scale().addTo(map);
+
+		var drawnItems = new L.FeatureGroup();
+		map.addLayer(drawnItems);
+
+		var drawControl = new L.Control.Draw({
+			draw: {
+				position: 'topleft',
+			    circle: {
+			    	title: 'Draw a circle to designate a traffic blockage.'
+			    },
+			    rectangle: false,
+			    polyline: false,
+			    marker: false,
+				polygon: {
+					title: 'Draw a polygon to designate a traffic blockage.',
+					allowIntersection: false,
+					drawError: {
+						color: '#b00b00',
+						timeout: 1000
+					},
+					shapeOptions: {
+						color: '#bada55'
+					}
+				}
+			},
+			edit: false
+		});
+		map.addControl(drawControl);
+
+
+	    map.on('draw:created', function (e) {
+	      var type = e.layerType,
+	        layer = e.layer;
+
+	        console.log('----->', layer.toGeoJSON());
+
+	      if (type === 'polygon') {
+	        // $.ajax({
+	        //   type: "POST",
+	        //   url: "/api/polygon",
+	        //   data: {"polygon": JSON.stringify(layer.toGeoJSON())}
+	        // }).done(function( msg ) {
+	        //   console.log('Done!');
+	        // });
+	        map.addLayer(layer);
+	      }
+	      if (type === 'circle') {
+	      	map.addLayer(layer);
+	      }
+	    });
 
 	    var SimulationValues = function() {
 	      this.distance = window.distance;
