@@ -291,7 +291,8 @@
 	    var SimulationValues = function() {
 	      this.distance = window.distance;
 	      this.max = window.max;
-	      this.zoomToRoute = false;	      
+	      this.zoomToRoute = false;
+	      this.message = 'beira';     
 	    };
 	    var simulation = new SimulationValues();
 
@@ -313,7 +314,7 @@
 	    // var distance_controller = f1.add(simulation, 'distance', 0, 50, 0.1).name("Distance (km)");
 	    var max_controller = f1.add(simulation, 'max', 0, 9000).name("Max results");
         var zoomtoroute_controller = f1.add(simulation, 'zoomToRoute').name('Zoom to route');
-
+		var scenario_controller = f1.add(simulation, 'message').name('3Di model');
 
 	    // distance_controller.onChange(function(value) {
 	    //   console.log("Distance: ", value);
@@ -330,6 +331,9 @@
 	        window.zoomtoroute = false;
 	      }
 	    });	    
+	    scenario_controller.onFinishChange(function(value) {
+	    	console.log('scenario:',value);
+	    });
 
 
 		// get color depending on population density value
